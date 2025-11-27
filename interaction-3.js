@@ -11,7 +11,7 @@ let dspNode = null;
 let dspNodeParams = null;
 let jsonParams = null;
 
-const dspName = "thunder";
+const dspName = "wind";
 const instance = new FaustWasm2ScriptProcessor(dspName);
 
 // output to window or npm package module
@@ -23,7 +23,7 @@ if (typeof module === "undefined") {
   module.exports = exp;
 }
 
-thunder.createDSP(audioContext, 1024).then((node) => {
+wind.createDSP(audioContext, 1024).then((node) => {
   dspNode = node;
   dspNode.connect(audioContext.destination);
   console.log("params: ", dspNode.getParams());
@@ -31,7 +31,7 @@ thunder.createDSP(audioContext, 1024).then((node) => {
   jsonParams = JSON.parse(jsonString)["ui"][0]["items"];
   dspNodeParams = jsonParams;
 
-  // dspNode.setParamValue("/thunder/gain", 0);
+  dspNode.setParamValue("/wind/gain", 0);
 });
 
 //==========================================================================================
@@ -49,7 +49,18 @@ function accelerationChange(accx, accy, accz) {
   // playAudio()
 }
 
-function rotationChange(rotx, roty, rotz) {}
+function rotationChange(rotx, roty, rotz) {
+  let tilt = Math.abs(roty);
+  let threshold = 10;
+
+  if (tilt > threshold) {
+    let vol = (tilt - threshold) / (90 - threshold);
+    if (vol > 1.0) vol = 1.0;
+    playAudio(vol);
+  } else {
+    playAudio(0);
+  }
+}
 
 function mousePressed() {
   playAudio(1.0);
@@ -67,7 +78,7 @@ function deviceTurned() {
 function deviceShaken() {
   shaketimer = millis();
   statusLabels[0].style("color", "pink");
-  playAudio();
+  // playAudio();
 }
 
 function getMinMaxParam(address) {
@@ -88,7 +99,7 @@ function getMinMaxParam(address) {
 //
 //==========================================================================================
 
-function playAudio(pressure) {
+function playAudio(val) {
   if (!dspNode) {
     return;
   }
@@ -96,17 +107,7 @@ function playAudio(pressure) {
     return;
   }
 
-  dspNode.setParamValue("/thunder/rumble", 1.0);
-  dspNode.setParamValue("/thunder/bubble/volume", 1.0);
-
-  console.log("Thunder Rumble ON");
-
-  setTimeout(() => {
-    if (dspNode) {
-      dspNode.setParamValue("/thunder/rumble", 0.0);
-      dspNode.setParamValue("/thunder/bubble/volume", 0.0);
-    }
-  }, 1000);
+  dspNode.setParamValue("/wind/gain", val);
 }
 
 //==========================================================================================
